@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>real time translator</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+            body, html {
+      height: 100%;
+      margin: 0;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+    }
+    .content {
+      flex: 1;
+    }
+    .navbar {
+      background-color: #34568B;
+    }
+    .btn-primary {
+      background-color: #88B04B;
+      border-color: #88B04B;
+    }
+    .form-label {
+      color: #34568B;
+    }
+    .logo {
+      max-width: 30%;
+      height: auto;
+      padding: 20px;
+    }
+    .footer {
+      color: black;
+      text-align: center;
+      padding: 10px 0;
+      width: 100%;
+    }
+    .form-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100%;
+      padding: 20px;
+    }
+    .form-box {
+      width: 100%;
+      max-width: 600px;
+      margin: 10px 0;
+    }
+    .btn-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg nacbar-dark bg-primary fixed-top">
+        <a class="navbar-navbar" href="#">real time translator</a>
+
+    </nav>
+
+        <div class="container">
+            <br>
+            <h1 class="text-center mt-4">Translation Service</h1>
+
+            
+            <form id="translationForm">   <!--submits to the API for translation-->
+                <div class="form-group">
+
+                    <label for="textToTranslate">Text to translate</label>   <!--will write the js functions within this html file that will do all the frontend processing towards the backend (the API) -->
+                    <textarea class="form-control" id="textToTranslate" rows="4" placeholder="Enter text here"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="languages">Languages (comma-seperated)</label>
+                    <input type="text" class="form-control" id="languages" placeholder=""e.g., es,fr,>
+                </div>
+
+                <button type="button" class="btn btn-primary translate-button" onclick="submitTranslation()">Translate</button> <!--submits the java function submitTranslation()-->
+           
+            </form>
+
+            <!--This div will be the element that displays the results -->
+            <div class="mt-4" id="results" style="display: none">
+                <h3>Translation Results</h3>
+                <pre id="translationResults"></pre>
+            </div>
+
+            <!--This will be the progress container that displays that the users input is being processed-->
+            <div class="mt-4" id="progress-container">
+                <h4 id="progress-text">Translation in progress...</h4>
+                <div class="progress">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-"></div>
+                </div>
+            </div>
+
+            <!--this will be the search functionality that queries the database and then return the status  -->
+
+            <div class="mt-4">
+                <label for="search-id">Check Translation by ID</label>
+                <input type="number" id="search-id" class="form-control" placeholder="Enter Translation ID">
+                <button id="search-button" class="btn btn-info mt-2" onclick="checkTranslationStatus()">Check Status</button>
+                <button id="content-button" class="btn btn-secondary mt-2" onclick="checkTranslationContent()">Check Content</button>
+            </div>
+
+            <!-- the onclick functions for the buttons are very important -->
+        
+
+            <!-- This div will be the translation status, that displays the actual text from the database - if it's still in progress or completed -->
+
+            <div class="mt-4" id="status-container" style="display: none">
+                <h4>Translation Status</h4>
+                <pre id="statusResult"></pre>
+            </div>
+
+            <div class="mt-4" id="content-container" style="display: none">
+                <h4>Translation Content</h4>
+                <pre id="contentResult"></pre>
+            </div>
+        </div>
+
+        <!-- Now the javascript functions need to be written, -->
+
+        <!-- first you need the following bootstraps for JS and dependencies -->
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+        <!-- and the Axios for making HTTP requests, with using the script you've installed the Axios client -> for this the jsdelivr-script was necessary-->
+
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+        <!-- now follows the actual javascript-->
+
+        <script>
+            async function submitTranslation() {
+                const text = document.getElementById('textToTranslate').value;
+                const languages = document.getElementById('languages').value.split(',').map(lang => lang.trim());
+                if (!text || languages === 0 || languages[0] ) {
+                     alert("Please provide both text and target language."); return;}
+                                                }
+                
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                progressBar.classList.remove('bg-primary');
+                progressBar.classList.add('bg-primary');
+                progressBar.style.width = '0%';
+                progressText.textContent = 'Translation in progress ...';
+
+                try {
+                        const response = await axios.post('localhost:8000/translate', {
+                        text: text,
+                        languages: languages
+                        });
+
+                        const taskId = response.data.task_id; 
+                        alert('Task ID: ${taskId}') // 
+
+                        document.getElementById('progress-container').style.display = 'block';
+                        document.getElementById('results').style.display = 'none';
+                        document.getElementById('status-container').style.display = 'none';
+                        document.getElementById('content-container').style.display = 'none';
+
+                        let translationResult = null;
+                        let progress = 0;
+                        while (progress < 100) {
+                            await new Promise(resolve => setTimeout(resolve,1000))
+                            const resultResponse = await.axios('localhost:8000/translate${taskId}');
+                            translationResult = resultResponse.data;
+                            if (translationResult === 'completed') {
+                                progress = 100;                     
+                            }
+                            
+                            else {
+                                progres.style.width = '25%';
+                            }
+                        
+                        }
+                            progressBar.classList.remove('bg-primary');
+                            progressBar.classList.add('bg-success');
+                            progressBar.style.width = '100%';
+                            progressText.textContent = 'Translation complete!';
+
+                            document.getElementById('translationResults').textContent = JSON.stringify(translationResult.translations)
+                            document.getElementById('results').style.display = 'block';
+                    }
+
+                    catch (error) {
+                        console.error("Error submitting translation", error);
+                        alert("An error occured while translating, please try again.")
+                    }
+                
+                    
+        </script>
+        <!-- .value.split(',').map(lang => lang.trim()) formats it to a comma seperated array of strings -->
+
+        <!-- to prevent the user from submitting an empty input that would create unnecessary network traffic to chatGPT -> that's what line 142 does -->
+
+        <!-- starting in line 146 we're creating a progress bar that's linked to the progress in the background -->
+
+        <!-- starting in line 153 is the axios function that will the post request with the payload -->
+
+        <!-- starting in line 162: this part dinamically changes the display. In the beginning everything is set to 'none'   -->
+
+        <!-- with the pulling technique in lines 167 to 170 we check the progress from the backend every second -->
+
+        <!-- lines 172 to 178 : if the after receiving the translation result the code checks if its completed, if so we set the progress to 100. If that's not the case, the progress bar will do increments of 25% until the progress is finished  -->
+
+        <!-- lines 182 to   : change the visual components of the progress bar -->
+    
+    
+</body>
+</html>      
